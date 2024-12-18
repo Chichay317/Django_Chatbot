@@ -10,7 +10,7 @@
     height: 100vh;
   }
   .card {
-    max-width: 400px;
+    max-width: 500px;
   }
   .card-header {
     background-color: #b388eb;
@@ -62,6 +62,18 @@
     border: 1px solid #f5c6cb;
     border-radius: 4px;
   }
+  .link-container {
+    text-align: center;
+    margin-top: 20px;
+  }
+  .link-container a {
+    color: #a06cd5;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  .link-container a:hover {
+    text-decoration: underline;
+  }
 </style>
 
 {% endblock %} {% block content %}
@@ -96,6 +108,10 @@
         </div>
         <button type="submit">Login</button>
       </form>
+      <div class="link-container">
+        <a href="{% url 'register' %}">Don't have an account? Register here</a><br>
+        <a href="{% url 'chatbot' %}">Back to Home</a>
+      </div>
     </div>
   </div>
 </div>

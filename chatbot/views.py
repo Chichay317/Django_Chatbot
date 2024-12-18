@@ -5,24 +5,48 @@ import google.generativeai as genai
 from django.contrib import auth
 from django.contrib.auth.models import User
 from .models import Chat
+from .responses import PREDEFINED_RESPONSES
 from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseForbidden
+from dotenv import load_dotenv
 
-gemini_api_key = os.environ["GEMINI_API_KEY"]
+load_dotenv()
+
+gemini_api_key = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=gemini_api_key)
 
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 def chatbot(request):
-    chats = Chat.objects.filter(user=request.user)
+    authenticated = request.user.is_authenticated
+
+    chats = Chat.objects.filter(user=request.user) if authenticated else None
+
     if request.method == 'POST':
         message = request.POST.get('message') 
+
         if message:
-            response = model.generate_content(message)
-            chat = Chat(user=request.user, message=message, response=response.text, created_at=timezone.now())
-            chat.save()
-            return JsonResponse({"response": response.text})
+            try:
+                response = model.generate_content(message)
+                response_text = response.text
+
+                if authenticated:
+                    chat = Chat(user=request.user, message=message, response=response_text, created_at=timezone.now())
+                    chat.save()
+
+            except Exception as e:
+                response_text = "I'm having trouble generating a response right now. Please try again later."
+
+            return JsonResponse({"response": response_text})
         return JsonResponse({"error": "No message provided"}, status=400)
-    return render(request, 'chatbot.html', {'chats': chats})
+
+    return render(request, 'chatbot.html', {
+        'chats': chats, 
+        'questions_and_answers': PREDEFINED_RESPONSES, 
+        'authenticated': authenticated,
+        'chat_saving_message': "Your chats won't be saved unless you log in." if not authenticated else ""
+    })
 
 def login(request):
     if request.method == 'POST':
